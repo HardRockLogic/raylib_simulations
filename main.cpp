@@ -9,7 +9,7 @@
 int constexpr SIDE = 700;
 Color const coral = {245, 105, 66, 255};
 Color const not_tiffany_blue = {96, 179, 176, 255};
-Vector2 const GRAV{0, 1.5};
+Vector2 const GRAV{0, 0.7};
 
 float DegreeToRadians(float deg) { return (deg * (PI / 180)); }
 
@@ -59,7 +59,9 @@ public:
       RotateDirection();
     }
     if (pos.y + radius >= SIDE) {
-      // std::cout << direction.y << '\n';
+      LOG2D(direction);
+      std::cout << Vector2Length(direction) << '\n';
+      std::cout << Vector2LengthSqr(direction) << '\n';
       if (std::abs(direction.y) <= 1) {
         calm_state = true;
         direction = {0, 0};

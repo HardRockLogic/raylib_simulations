@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <execution>
 #include <iostream>
 #include <raylib.h>
 #include <raymath.h>
@@ -135,6 +136,54 @@ private:
       particles_.push_back(Ball(randomRadius, Vector2{x, y}));
     }
   }
+  void Create3Debug() {
+    particles_.push_back(Ball(20, Vector2{40, 40}));
+    particles_.push_back(Ball(30, Vector2{100, 80}));
+    particles_.push_back(Ball(25, Vector2{250, 300}));
+  }
+
+  void CheckParticleCollision() {
+    for (size_t i = 0; i < particles_.size(); ++i) {
+      for (size_t j = i + 1; j < particles_.size(); ++j) {
+        if (CheckCollisionCircles(particles_[i].pos, particles_[i].radius_,
+                                  particles_[j].pos, particles_[j].radius_)) {
+          // std::cout << "yeah, its me\n";
+          // v1 hat
+          float iMass = 2 * particles_[j].mass_ /
+                        (particles_[i].mass_ + particles_[j].mass_);
+          float iDotProduct = Vector2DotProduct(
+              Vector2Subtract(particles_[i].direction, particles_[j].direction),
+              Vector2Subtract(particles_[i].pos, particles_[j].pos));
+          float iSqrMagnitude = Vector2LengthSqr(
+              Vector2Subtract(particles_[i].pos, particles_[j].pos));
+          Vector2 iRightPart = Vector2Scale(
+              Vector2Subtract(particles_[i].pos, particles_[j].pos),
+              iMass * (iDotProduct / iSqrMagnitude));
+          Vector2 iNewDirection =
+              Vector2Subtract(particles_[i].direction, iRightPart);
+
+          // v2 hat
+          float jMass = 2 * particles_[i].mass_ /
+                        (particles_[i].mass_ + particles_[j].mass_);
+          float jDotProduct = Vector2DotProduct(
+              Vector2Subtract(particles_[j].direction, particles_[i].direction),
+              Vector2Subtract(particles_[j].pos, particles_[i].pos));
+          float jSqrMagnitude = Vector2LengthSqr(
+              Vector2Subtract(particles_[j].pos, particles_[i].pos));
+          Vector2 jRightPart = Vector2Scale(
+              Vector2Subtract(particles_[j].pos, particles_[i].pos),
+              jMass * (jDotProduct / jSqrMagnitude));
+          Vector2 jNewDirection =
+              Vector2Subtract(particles_[j].direction, jRightPart);
+
+          // LOG2D(iNewDirection);
+          // LOG2D(jNewDirection);
+          particles_[i].ChangeDirection(iNewDirection);
+          particles_[j].ChangeDirection(jNewDirection);
+        }
+      }
+    }
+  }
 
 public:
   std::vector<Ball> particles_;
@@ -143,6 +192,7 @@ public:
     for (unsigned n = 0; n <= particlesNumber; ++n) {
       Populate();
     }
+    // Create3Debug();
   }
 
   void Draw() {
@@ -151,6 +201,7 @@ public:
     }
   }
   void Update() {
+    CheckParticleCollision();
     for (Ball &particle : particles_) {
       particle.Update();
     }
@@ -161,7 +212,7 @@ int main() {
   InitWindow(SIDE, SIDE, "Ball");
   SetTargetFPS(60);
   // Ball ball(40);
-  CollisionControll space(4);
+  CollisionControll space(10);
 
   while (!WindowShouldClose()) {
     BeginDrawing();
