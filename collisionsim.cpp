@@ -1,7 +1,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
-#include <execution>
 #include <iostream>
 #include <raylib.h>
 #include <raymath.h>
@@ -110,7 +109,7 @@ public:
 class CollisionControll {
 private:
   std::tuple<float, float, float> RandomCircleData() {
-    float randomRadius = GetRandomValue(20, 40);
+    float randomRadius = GetRandomValue(5, 7);
     float x = GetRandomValue(0 + randomRadius, SIDE - randomRadius - 1);
     float y = GetRandomValue(0 + randomRadius, SIDE - randomRadius - 1);
     return {randomRadius, x, y};
@@ -123,7 +122,7 @@ private:
       particles_.push_back(Ball(randomRadius, Vector2{x, y}));
     } else {
       bool notValid = true;
-      float randomRadius, x, y;
+      // float randomRadius, x, y;
       for (size_t i = 0; i < particles_.size(); ++i) {
         notValid =
             CheckCollisionCircles(particles_[i].pos, particles_[i].radius_,
@@ -212,7 +211,7 @@ int main() {
   InitWindow(SIDE, SIDE, "Ball");
   SetTargetFPS(60);
   // Ball ball(40);
-  CollisionControll space(10);
+  CollisionControll space(2000);
 
   while (!WindowShouldClose()) {
     BeginDrawing();
