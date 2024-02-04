@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -g -std=c++20 -Wall -Wextra # -DDEBUG
+CXXFLAGS = -std=c++20 -Wall -Wextra # -DDEBUG
 LDFLAGS = -lraylib
 
 SRC = main.cpp
@@ -11,6 +11,9 @@ EXE = main
 all: $(EXE) $(EXE2)
 
 $(EXE): $(SRC)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+
+collisions: collisionsim.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 # $(EXE2): $(SRC2)
