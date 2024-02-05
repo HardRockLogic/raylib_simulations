@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -9,14 +10,37 @@
 
 #define LOG2D(v) std::cout << v.x << ", " << v.y << "\n"
 
-int constexpr SIDE = 700;
+int constexpr SIDE = 850;
 Color const coral = {245, 105, 66, 255};
 Color const not_tiffany_blue = {96, 179, 176, 255};
 // Vector2 const GRAV{0, 1.5};
 
+double lastFPSUpdate = 0.0;
+
 float DegreeToRadians(float deg) { return (deg * (PI / 180)); }
 
 float PositiveToNegative(float num) { return num >= 0 ? num * -1 : num; }
+
+bool ElapsedTime(double interval) {
+  double currentTime = GetTime();
+  if (currentTime - lastFPSUpdate >= interval) {
+    lastFPSUpdate = currentTime;
+    return true;
+  }
+  return false;
+}
+
+Color EnergyToColor(float energy) {
+  energy = std::max(1000.0f, std::min(12000.0f, energy));
+
+  float normalized = (energy - 1.0f) / 11999.0f;
+
+  unsigned char blue = static_cast<unsigned char>((1.0f - normalized) * 255);
+  unsigned char red = static_cast<unsigned char>(normalized * 255);
+  unsigned char green = 0;
+
+  return Color{red, green, blue, 255};
+}
 
 class Ball {
 private:
@@ -39,7 +63,11 @@ public:
     mass_ = radius / size_mass_ratio;
   }
 
-  void Draw() const { DrawCircle(pos.x, pos.y, radius_, coral); }
+  void Draw() const {
+    float energy = mass_ * Vector2LengthSqr(direction); // * 0.01;
+    // std::cout << energy << '\n';
+    DrawCircle(pos.x, pos.y, radius_, EnergyToColor(energy));
+  }
 
   void RotateDirection() {
     float deg;
@@ -108,8 +136,11 @@ public:
 
 class CollisionControll {
 private:
+  unsigned min_radius_;
+  unsigned max_radius_;
+
   std::tuple<float, float, float> RandomCircleData() {
-    float randomRadius = GetRandomValue(5, 7);
+    float randomRadius = GetRandomValue(min_radius_, max_radius_);
     float x = GetRandomValue(0 + randomRadius, SIDE - randomRadius - 1);
     float y = GetRandomValue(0 + randomRadius, SIDE - randomRadius - 1);
     return {randomRadius, x, y};
@@ -187,7 +218,9 @@ private:
 public:
   std::vector<Ball> particles_;
 
-  CollisionControll(unsigned particlesNumber) {
+  CollisionControll(unsigned particlesNumber, unsigned minRadius,
+                    unsigned maxRadius)
+      : min_radius_(minRadius), max_radius_(maxRadius) {
     for (unsigned n = 0; n <= particlesNumber; ++n) {
       Populate();
     }
@@ -210,8 +243,13 @@ public:
 int main() {
   InitWindow(SIDE, SIDE, "Ball");
   SetTargetFPS(60);
-  // Ball ball(40);
-  CollisionControll space(2000);
+
+  // Number of particles, min && max radius
+  CollisionControll space(2500, 3, 4);
+
+  double previousTime = GetTime();
+  double currentTime = 0.0;
+  double deltaTime = 0.0;
 
   while (!WindowShouldClose()) {
     BeginDrawing();
@@ -228,11 +266,19 @@ int main() {
     space.Update();
 
     // Drawing
-    ClearBackground(not_tiffany_blue);
+    ClearBackground(BLACK);
 
     space.Draw();
 
+    DrawText(TextFormat("FPS: %i", (int)(1.0 / deltaTime)), 5, 5, 40, GREEN);
+
     EndDrawing();
+
+    currentTime = GetTime();
+    if (ElapsedTime(0.2)) {
+      deltaTime = currentTime - previousTime;
+    }
+    previousTime = currentTime;
   }
 
   CloseWindow();
