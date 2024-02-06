@@ -45,7 +45,7 @@ Color EnergyToColor(float energy) {
 class Ball {
 private:
   bool clockwise_ = false;
-  // bool calm_state = false;
+  bool calm_state = false;
   // float const thermal_loss = 0.93;
 
 public:
@@ -110,22 +110,12 @@ public:
     }
   }
 
-  void DragLeft() {
-    Vector2 left{-0.25, 0};
-    direction = Vector2Add(direction, left);
-  }
-  void DragRight() {
-    Vector2 right{0.25, 0};
-    direction = Vector2Add(direction, right);
-  }
-  void Jump() {
-    // calm_state = false;
-    Vector2 up{0, -20};
-    direction = Vector2Add(direction, up);
-  }
   void ChangeDirection(Vector2 newDirection) { direction = newDirection; }
 
   void Update() {
+    // if (Vector2LengthSqr(direction) > 0) {
+    //   calm_state = false;
+    // }
     // if (!calm_state) {
     //   direction = Vector2Add(direction, GRAV);
     // }
@@ -224,7 +214,6 @@ public:
     for (unsigned n = 0; n <= particlesNumber; ++n) {
       Populate();
     }
-    // Create3Debug();
   }
 
   void Draw() {
@@ -244,8 +233,10 @@ int main() {
   InitWindow(SIDE, SIDE, "Ball");
   SetTargetFPS(60);
 
+  Shader blur = LoadShader(0, "glsl/blur.fs");
+
   // Number of particles, min && max radius
-  CollisionControll space(2500, 3, 4);
+  CollisionControll space(1000, 5, 7);
 
   double previousTime = GetTime();
   double currentTime = 0.0;
@@ -253,25 +244,21 @@ int main() {
 
   while (!WindowShouldClose()) {
     BeginDrawing();
-    // if (IsKeyDown(KEY_LEFT)) {
-    //   ball.DragLeft();
-    // }
-    // if (IsKeyDown(KEY_RIGHT)) {
-    //   ball.DragRight();
-    // }
-    // if (IsKeyPressed(KEY_SPACE)) {
-    //   ball.Jump();
-    // }
 
     space.Update();
 
     // Drawing
     ClearBackground(BLACK);
 
+    // BeginShaderMode(blur);
+
     space.Draw();
 
     DrawText(TextFormat("FPS: %i", (int)(1.0 / deltaTime)), 5, 5, 40, GREEN);
+    // DrawText(TextFormat("FPS: %i", GetFPS()), 5, 5, 40, GREEN);
+    // DrawRectangle(0, 0, SIDE - 1, SIDE - 1, Color{111, 111, 111, 210});
 
+    // EndShaderMode();
     EndDrawing();
 
     currentTime = GetTime();
@@ -281,6 +268,7 @@ int main() {
     previousTime = currentTime;
   }
 
+  UnloadShader(blur);
   CloseWindow();
   return 0;
 }
