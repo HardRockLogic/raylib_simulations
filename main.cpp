@@ -18,7 +18,6 @@ float PositiveToNegative(float num) { return num >= 0 ? num * -1 : num; }
 class Ball {
 private:
   bool clockwise_ = false;
-  bool calm_state = false;
   float const thermal_loss = 0.93;
 
 public:
@@ -31,10 +30,10 @@ public:
   void RotateDirection() {
     float deg;
     if (clockwise_) {
-      deg = GetRandomValue(355, 357);
+      deg = GetRandomValue(355, 356);
       clockwise_ = false;
     } else {
-      deg = GetRandomValue(1, 3);
+      deg = GetRandomValue(1, 2);
       clockwise_ = true;
     }
     float rad = DegreeToRadians(deg);
@@ -59,15 +58,15 @@ public:
       RotateDirection();
     }
     if (pos.y + radius >= SIDE) {
-      LOG2D(direction);
-      std::cout << Vector2Length(direction) << '\n';
-      std::cout << Vector2LengthSqr(direction) << '\n';
-      if (std::abs(direction.y) <= 1) {
-        calm_state = true;
-        direction = {0, 0};
+      // LOG2D(direction);
+
+      if (pos.y + radius > SIDE) {
+        // direction = {0, 0};
+        pos = {pos.x, SIDE - radius};
       }
-      direction.y = PositiveToNegative(direction.y) * thermal_loss;
-      RotateDirection();
+
+      direction.y = PositiveToNegative(direction.y);
+      direction = Vector2Scale(direction, thermal_loss);
     }
   }
 
@@ -80,15 +79,12 @@ public:
     direction = Vector2Add(direction, right);
   }
   void Jump() {
-    calm_state = false;
     Vector2 up{0, -20};
     direction = Vector2Add(direction, up);
   }
 
   void Update() {
-    if (!calm_state) {
-      direction = Vector2Add(direction, GRAV);
-    }
+    direction = Vector2Add(direction, GRAV);
     pos = Vector2Add(pos, direction);
     CheckWalls();
   }
