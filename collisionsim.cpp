@@ -64,7 +64,8 @@ public:
   }
 
   void Draw() const {
-    float energy = mass_ * Vector2LengthSqr(direction); // * 0.01;
+    // KE = 1/2(mv^2)
+    float energy = (mass_ * Vector2LengthSqr(direction)) / 2;
     // std::cout << energy << '\n';
     DrawCircle(pos.x, pos.y, radius_, EnergyToColor(energy));
   }
@@ -162,6 +163,82 @@ private:
     particles_.push_back(Ball(25, Vector2{250, 300}));
   }
 
+  void CheckParticleCollisionGrid() {
+    float cellSize = SIDE / 5.;
+    size_t cellId = 1;
+    for (float raw = 0; raw <= cellSize * 4 - 1; raw += cellSize - 1) {
+      for (float coll = 0; coll <= cellSize * 4 - 1; coll += cellSize - 1) {
+        std::vector<size_t> grid;
+        Rectangle rec{coll, raw, cellSize, cellSize};
+        for (size_t idx = 0; idx < particles_.size(); ++idx) {
+          if (CheckCollisionCircleRec(particles_.at(idx).pos,
+                                      particles_.at(idx).radius_, rec)) {
+            grid.push_back(idx);
+          }
+        }
+        for (size_t n = 0; n < grid.size(); ++n) {
+          for (size_t m = n + 1; m < grid.size(); ++m) {
+            size_t i = grid[n];
+            size_t j = grid[m];
+            if (CheckCollisionCircles(particles_[i].pos, particles_[i].radius_,
+                                      particles_[j].pos,
+                                      particles_[j].radius_)) {
+
+              float sqrDist =
+                  Vector2Distance(particles_[i].pos, particles_[j].pos);
+              float deltaDist =
+                  ((particles_[i].radius_ + particles_[j].radius_) - sqrDist) /
+                  2;
+              Vector2 normJI = Vector2Normalize(
+                  Vector2Subtract(particles_[i].pos, particles_[j].pos));
+
+              particles_[i].pos = Vector2Add(particles_[i].pos,
+                                             Vector2Scale(normJI, deltaDist));
+              particles_[j].pos =
+                  Vector2Add(particles_[j].pos,
+                             (Vector2Negate(Vector2Scale(normJI, deltaDist))));
+
+              // v1 hat
+              float iMass = 2 * particles_[j].mass_ /
+                            (particles_[i].mass_ + particles_[j].mass_);
+              float iDotProduct = Vector2DotProduct(
+                  Vector2Subtract(particles_[i].direction,
+                                  particles_[j].direction),
+                  Vector2Subtract(particles_[i].pos, particles_[j].pos));
+              float iSqrMagnitude = Vector2LengthSqr(
+                  Vector2Subtract(particles_[i].pos, particles_[j].pos));
+              Vector2 iRightPart = Vector2Scale(
+                  Vector2Subtract(particles_[i].pos, particles_[j].pos),
+                  iMass * (iDotProduct / iSqrMagnitude));
+              Vector2 iNewDirection =
+                  Vector2Subtract(particles_[i].direction, iRightPart);
+
+              // v2 hat
+              float jMass = 2 * particles_[i].mass_ /
+                            (particles_[i].mass_ + particles_[j].mass_);
+              float jDotProduct = Vector2DotProduct(
+                  Vector2Subtract(particles_[j].direction,
+                                  particles_[i].direction),
+                  Vector2Subtract(particles_[j].pos, particles_[i].pos));
+              float jSqrMagnitude = Vector2LengthSqr(
+                  Vector2Subtract(particles_[j].pos, particles_[i].pos));
+              Vector2 jRightPart = Vector2Scale(
+                  Vector2Subtract(particles_[j].pos, particles_[i].pos),
+                  jMass * (jDotProduct / jSqrMagnitude));
+              Vector2 jNewDirection =
+                  Vector2Subtract(particles_[j].direction, jRightPart);
+
+              // LOG2D(iNewDirection);
+              // LOG2D(jNewDirection);
+              particles_[i].ChangeDirection(iNewDirection);
+              particles_[j].ChangeDirection(jNewDirection);
+            }
+          }
+        }
+      }
+    }
+  }
+
   void CheckParticleCollision() {
     for (size_t i = 0; i < particles_.size(); ++i) {
       for (size_t j = i + 1; j < particles_.size(); ++j) {
@@ -222,7 +299,8 @@ public:
     }
   }
   void Update() {
-    CheckParticleCollision();
+    // CheckParticleCollision();
+    CheckParticleCollisionGrid();
     for (Ball &particle : particles_) {
       particle.Update();
     }
@@ -236,7 +314,9 @@ int main() {
   Shader blur = LoadShader(0, "glsl/blur.fs");
 
   // Number of particles, min && max radius
-  CollisionControll space(1000, 5, 7);
+  // 6000 particles is starts droping fps to 50 if all of them colliding in one
+  // small spot but then normalizes to 60
+  CollisionControll space(60, 10, 13);
 
   double previousTime = GetTime();
   double currentTime = 0.0;
