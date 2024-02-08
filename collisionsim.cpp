@@ -144,7 +144,6 @@ private:
       particles_.push_back(Ball(randomRadius, Vector2{x, y}));
     } else {
       bool notValid = true;
-      // float randomRadius, x, y;
       for (size_t i = 0; i < particles_.size(); ++i) {
         notValid =
             CheckCollisionCircles(particles_[i].pos, particles_[i].radius_,
@@ -165,7 +164,6 @@ private:
 
   void CheckParticleCollisionGrid() {
     float cellSize = SIDE / 5.;
-    size_t cellId = 1;
     for (float raw = 0; raw <= cellSize * 4 - 1; raw += cellSize - 1) {
       for (float coll = 0; coll <= cellSize * 4 - 1; coll += cellSize - 1) {
         std::vector<size_t> grid;
@@ -184,6 +182,7 @@ private:
                                       particles_[j].pos,
                                       particles_[j].radius_)) {
 
+              // Preventing particles overlap
               float sqrDist =
                   Vector2Distance(particles_[i].pos, particles_[j].pos);
               float deltaDist =
